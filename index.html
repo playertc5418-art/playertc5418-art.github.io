@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TC | Personal Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Microsoft YaHei', sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 哑光磨砂质感 */
+        .matte-glass {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .matte-dark {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { width: 0px; }
+        
+        .section-fade {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
+
+        /* 大利落圆角自定义 */
+        .rounded-tc { border-radius: 2.5rem; }
+        
+        /* 按钮悬浮动效 */
+        .btn-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .btn-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+        /* 编辑模式隐藏元素 */
+        .admin-only { display: none; }
+        body.is-admin .admin-only { display: block; }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- 加载动画 -->
+    <div id="loader" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#0F172A]">
+        <div class="w-16 h-[1px] bg-white/20 relative overflow-hidden">
+            <div class="absolute inset-0 bg-[#E11D48] translate-x-[-100%] animate-[loading_1.5s_infinite]"></div>
+        </div>
+    </div>
+    <style>@keyframes loading { to { transform: translateX(100%); } }</style>
+
+    <!-- 顶部导航 -->
+    <nav class="fixed top-0 w-full z-50 matte-glass px-6 py-4 flex justify-between items-center border-b border-slate-200/50">
+        <div id="admin-trigger" class="text-xl font-bold tracking-tighter flex items-center gap-2 cursor-pointer select-none">
+            <span class="w-9 h-9 bg-[#0F172A] rounded-xl flex items-center justify-center text-white text-sm">TC</span>
+            <span class="hidden sm:block text-[#0F172A]">SPACE</span>
+        </div>
+        <div class="flex gap-2 p-1 bg-slate-100 rounded-[1.2rem]">
+            <button onclick="switchTab('diy')" id="btn-diy" class="px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#0F172A] text-white">个人展示</button>
+            <button onclick="switchTab('diary')" id="btn-diary" class="px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-slate-500">随身日记</button>
+        </div>
+    </nav>
+
+    <!-- 内容区 -->
+    <main class="mt-24 pb-12 px-4 sm:px-8 max-w-5xl mx-auto">
+        
+        <!-- 板块1：全能DIY展示台（支持HTML代码直接渲染） -->
+        <section id="content-diy" class="tab-content active section-fade">
+            <div class="relative group">
+                <!-- DIY Banner 渲染容器 -->
+                <div id="diy-banner" class="w-full h-[550px] rounded-tc overflow-hidden relative shadow-2xl transition-all duration-700">
+                    <!-- 这里会渲染：普通文字内容 或 你粘贴的HTML代码 -->
+                    <div id="diy-render-container" class="w-full h-full"></div>
+                    
+                    <!-- 编辑按钮（仅Admin可见） -->
+                    <button onclick="openEditModal()" class="admin-only absolute top-6 right-16 p-3 matte-glass rounded-2xl hover:bg-white transition-all z-10">
+                        <i data-lucide="edit-3" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <!-- 音乐播放按钮（仅Admin可见） -->
+                    <button onclick="toggleAudio()" id="audio-btn" class="admin-only absolute top-6 right-6 p-3 matte-glass rounded-2xl hover:bg-white transition-all z-10">
+                        <i data-lucide="music" class="w-5 h-5"></i>
+                    </button>
+                    <audio id="diy-audio" preload="auto">
+                </div>
+
+                <!-- 切换箭头 -->
+                <div class="flex justify-between items-center mt-8 px-4">
+                    <div class="flex gap-2">
+                        <button onclick="changeTemplate(-1)" class="p-4 rounded-full border border-slate-200 hover:bg-[#0F172A] hover:text-white transition-all btn-hover">
+                            <i data-lucide="chevron-left"></i>
+                        </button>
+                        <button onclick="changeTemplate(1)" class="p-4 rounded-full border border-slate-200 hover:bg-[#0F172A] hover:text-white transition-all btn-hover">
+                            <i data-lucide="chevron-right"></i>
+                        </button>
+                    </div>
+                    <div id="template-indicator" class="text-xs font-bold tracking-widest text-slate-400">01 / 04</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 板块2：随身小日记（完全原样不动） -->
+        <section id="content-diary" class="tab-content section-fade">
+            <!-- 仅Admin可见的输入框 -->
+            <div class="admin-only matte-glass p-6 rounded-tc shadow-xl border border-white bg-white/50 mb-8 animate-[pop_0.4s]">
+                <textarea id="diary-input" placeholder="输入此刻的利落心情/随笔..." class="w-full h-28 bg-transparent border-none focus:ring-0 text-lg resize-none placeholder:text-slate-400 font-medium"></textarea>
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
+                    <label class="cursor-pointer group flex items-center gap-3 text-slate-500 hover:text-[#0F172A]">
+                        <div class="p-2.5 rounded-2xl bg-slate-100 group-hover:bg-slate-200 transition-all">
+                            <i data-lucide="camera" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-sm font-semibold">加入视觉记录</span>
+                        <input type="file" id="diary-file" accept="image/*" class="hidden" onchange="previewImage()">
+                    </label>
+                    <button onclick="saveDiary()" class="bg-[#0F172A] text-white px-10 py-3 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg">发布</button>
+                </div>
+                <div id="image-preview-box" class="mt-4 hidden relative w-24 h-24">
+                    <img id="img-preview" class="w-full h-full object-cover rounded-2xl">
+                    <button onclick="cancelImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                </div>
+            </div>
+
+            <!-- 访客提示（非Admin可见） -->
+            <div id="visitor-msg" class="text-center py-10 text-slate-400 font-medium tracking-wide">
+                这里记录了一些随笔感悟与日常碎片。
+            </div>
+
+            <!-- 日记流 -->
+            <div id="diary-list" class="space-y-6"></div>
+        </section>
+    </main>
+
+    <!-- DIY编辑弹窗（新增：普通模式 + HTML代码模式 双切换） -->
+    <div id="edit-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl animate-[pop_0.3s] max-h-[90vh] overflow-y-auto">
+            <h3 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="settings-2"></i> 自定义设置</h3>
+            
+            <!-- 模式切换按钮 -->
+            <div class="flex gap-2 mb-6">
+                <button onclick="switchEditMode('normal')" id="btn-normal-mode" class="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-bold">普通模式（文字/图片/音乐）</button>
+                <button onclick="switchEditMode('code')" id="btn-code-mode" class="px-4 py-2 rounded-xl bg-slate-200 text-slate-600 text-sm font-bold">HTML代码模式（粘贴AI代码）</button>
+            </div>
+
+            <!-- 普通模式内容 -->
+            <div id="normal-mode-panel" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">顶部标签 (TAG)</label>
+                    <input type="text" id="edit-tag" class="w-full p-4 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-900" placeholder="如：MUSIC/祝福/涂鸦">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">大标题 (TITLE)【可换行=涂鸦短句】</label>
+                    <textarea id="edit-title" class="w-full p-4 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-900 h-20" placeholder="自定义标题/涂鸦文字"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">文案描述 (DESCRIPTION)【祝福/随笔/语录】</label>
+                    <textarea id="edit-desc" class="w-full p-4 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-900 h-24" placeholder="写祝福、个人语录、随性随笔"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">背景图片链接 (IMAGE URL)</label>
+                    <input type="text" id="edit-img" class="w-full p-4 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-900" placeholder="氛围感背景图">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">歌曲音频链接 (AUDIO URL)【可选】</label>
+                    <input type="text" id="edit-audio" class="w-full p-4 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-900" placeholder="粘贴mp3链接，留空不播放">
+                </div>
+            </div>
+
+            <!-- HTML代码模式内容（核心新增） -->
+            <div id="code-mode-panel" class="hidden">
+                <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">粘贴AI生成的HTML代码（直接渲染到展示区）</label>
+                <textarea id="edit-html-code" class="w-full p-4 bg-slate-900 text-green-400 rounded-2xl border-none focus:ring-2 focus:ring-green-500 h-90 font-mono text-sm" placeholder="把AI给你的HTML代码全部粘贴到这里，保存后立刻生效！"></textarea>
+                <p class="text-xs text-slate-400 mt-2">⚠️ 粘贴后自动覆盖普通模式的内容，清空代码则恢复普通模式</p>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button onclick="saveDIY()" class="flex-1 bg-[#0F172A] text-white py-4 rounded-2xl font-bold hover:opacity-90 transition-all">保存永久生效</button>
+                <button onclick="closeEditModal()" class="px-6 bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全屏查看图片 -->
+    <div id="zoom-overlay" class="fixed inset-0 z-[110] hidden bg-black/95 flex items-center justify-center p-4 cursor-zoom-out" onclick="this.classList.add('hidden')">
+        <img id="zoomed-img" src="" class="max-w-full max-h-full rounded-lg shadow-2xl">
+    </div>
+
+    <script>
+        // --- 初始化配置 ---
+        let isAdmin = false;
+        let currentTemplateIdx = 0;
+        let selectedImgBase64 = null;
+        let audioPlaying = false;
+        let currentEditMode = 'normal'; // 默认普通模式
+
+        // 默认模板（新增 html 字段，存粘贴的代码）
+        const defaultTemplates = [
+            { 
+                tag: "MAY 10", title: "母亲节快乐", desc: "岁月温柔，愿您每天都充满笑容，健康平安。感谢您生命中无私的陪伴。", 
+                img: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1200", 
+                audio: "",
+                html: "" // 代码模式：为空=用普通内容
+            },
+            { 
+                tag: "MUSIC", title: "我的专属单曲", desc: "音乐是避难所，此刻循环喜欢的旋律。", 
+                img: "https://images.unsplash.com/photo-1514525253344-f814d074e015?q=80&w=1200", 
+                audio: "",
+                html: ""
+            },
+            { 
+                tag: "QUOTES", title: "个人座右铭", desc: "克制而不廉价，高级源于对细节的极致追求。Stay cool, stay simple.", 
+                img: "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?q=80&w=1200", 
+                audio: "",
+                html: ""
+            },
+            { 
+                tag: "GRAFFITI", title: "今日涂鸦随笔", desc: "随性记录当下的心情，低饱和的生活质感。", 
+                img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1200", 
+                audio: "",
+                html: ""
+            }
+        ];
+
+        let userDIY = JSON.parse(localStorage.getItem('tc_diy_data')) || defaultTemplates;
+        let userDiaries = JSON.parse(localStorage.getItem('tc_diary_data')) || [];
+
+        // --- 核心逻辑：Admin模式（点击Logo 5次，密码tc888解锁） ---
+        let clickCount = 0;
+        document.getElementById('admin-trigger').onclick = () => {
+            clickCount++;
+            if(clickCount === 5) {
+                const pwd = prompt("请输入管理凭证（解锁编辑权限）：");
+                if(pwd === 'tc888') {
+                    isAdmin = true;
+                    document.body.classList.add('is-admin');
+                    document.getElementById('visitor-msg').style.display = 'none';
+                    alert("✅ 管理员模式已激活！支持粘贴HTML代码自定义展示区");
+                    renderDiaries();
+                }
+                clickCount = 0;
+            }
+        };
+
+        // --- 核心逻辑：编辑模式切换（普通 / 代码） ---
+        function switchEditMode(mode) {
+            currentEditMode = mode;
+            const normalPanel = document.getElementById('normal-mode-panel');
+            const codePanel = document.getElementById('code-mode-panel');
+            const btnNormal = document.getElementById('btn-normal-mode');
+            const btnCode = document.getElementById('btn-code-mode');
+
+            if(mode === 'normal') {
+                normalPanel.classList.remove('hidden');
+                codePanel.classList.add('hidden');
+                btnNormal.classList.add('bg-[#0F172A]','text-white');
+                btnNormal.classList.remove('bg-slate-200','text-slate-600');
+                btnCode.classList.remove('bg-[#0F172A]','text-white');
+                btnCode.classList.add('bg-slate-200','text-slate-600');
+            } else {
+                normalPanel.classList.add('hidden');
+                codePanel.classList.remove('hidden');
+                btnCode.classList.add('bg-[#0F172A]','text-white');
+                btnCode.classList.remove('bg-slate-200','text-slate-600');
+                btnNormal.classList.remove('bg-[#0F172A]','text-white');
+                btnNormal.classList.add('bg-slate-200','text-slate-600');
+            }
+        }
+
+        // --- 核心逻辑：板块切换 ---
+        function switchTab(tab) {
+            const isDiy = tab === 'diy';
+            document.getElementById('content-diy').classList.toggle('active', isDiy);
+            document.getElementById('content-diary').classList.toggle('active', !isDiy);
+            
+            document.getElementById('btn-diy').className = isDiy ? 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#0F172A] text-white' : 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-slate-500';
+            document.getElementById('btn-diary').className = !isDiy ? 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#0F172A] text-white' : 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-slate-500';
+        }
+
+        // --- DIY 核心逻辑（HTML代码渲染 + 普通模式） ---
+        function updateDiyUI() {
+            const data = userDIY[currentTemplateIdx];
+            const container = document.getElementById('diy-render-container');
+            const audioEl = document.getElementById('diy-audio');
+            
+            // 核心：如果有HTML代码，直接渲染；没有就用普通文字模式
+            if(data.html && data.html.trim() !== '') {
+                container.innerHTML = data.html;
+            } else {
+                // 普通模式：渲染文字+背景图
+                container.innerHTML = `
+                    <img id="diy-img" src="${data.img}" class="w-full h-full object-cover brightness-[0.7]" alt="bg">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#0F172A]/90 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-12 left-8 right-8 md:left-12 md:right-12">
+                        <span class="px-4 py-1.5 rounded-full border border-white/30 text-white text-[10px] tracking-[0.2em] font-bold mb-6 inline-block backdrop-blur-sm">${data.tag}</span>
+                        <h1 class="text-white text-5xl md:text-7xl font-bold tracking-tight mb-4 leading-tight">${data.title.replace(/\n/g, '<br>')}</h1>
+                        <p class="text-white/70 text-lg md:text-xl font-light leading-relaxed max-w-xl">${data.desc}</p>
+                    </div>
+                `;
+            }
+
+            // 更新指示器
+            document.getElementById('template-indicator').innerText = `0${currentTemplateIdx + 1} / 0${userDIY.length}`;
+            
+            // 加载音频
+            if(data.audio) {
+                audioEl.src = data.audio;
+            } else {
+                audioEl.src = "";
+                audioPlaying = false;
+            }
+        }
+
+        // 切换模板
+        function changeTemplate(dir) {
+            document.getElementById('diy-audio').pause();
+            audioPlaying = false;
+            currentTemplateIdx = (currentTemplateIdx + dir + userDIY.length) % userDIY.length;
+            updateDiyUI();
+        }
+
+        // 打开编辑弹窗（自动识别当前是代码模式还是普通模式）
+        function openEditModal() {
+            const data = userDIY[currentTemplateIdx];
+            // 填充普通模式数据
+            document.getElementById('edit-tag').value = data.tag || "";
+            document.getElementById('edit-title').value = data.title || "";
+            document.getElementById('edit-desc').value = data.desc || "";
+            document.getElementById('edit-img').value = data.img || "";
+            document.getElementById('edit-audio').value = data.audio || "";
+            // 填充代码模式数据
+            document.getElementById('edit-html-code').value = data.html || "";
+
+            // 自动切换模式：有代码就切代码模式，没有就普通模式
+            if(data.html && data.html.trim() !== '') {
+                switchEditMode('code');
+            } else {
+                switchEditMode('normal');
+            }
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        // 关闭编辑弹窗
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        // 保存DIY内容（核心：区分两种模式）
+        function saveDIY() {
+            const data = {};
+            if(currentEditMode === 'code') {
+                // 代码模式：只保存HTML代码，清空普通字段
+                data.html = document.getElementById('edit-html-code').value;
+                data.tag = "";
+                data.title = "";
+                data.desc = "";
+                data.img = "";
+                data.audio = "";
+            } else {
+                // 普通模式：保存文字图片音乐，清空HTML代码
+                data.tag = document.getElementById('edit-tag').value;
+                data.title = document.getElementById('edit-title').value;
+                data.desc = document.getElementById('edit-desc').value;
+                data.img = document.getElementById('edit-img').value;
+                data.audio = document.getElementById('edit-audio').value;
+                data.html = ""; // 清空代码，避免冲突
+            }
+
+            // 保存到本地
+            userDIY[currentTemplateIdx] = data;
+            localStorage.setItem('tc_diy_data', JSON.stringify(userDIY));
+            updateDiyUI();
+            closeEditModal();
+            alert("✅ 保存成功！展示区已更新");
+        }
+
+        // 音频播放/暂停
+        function toggleAudio() {
+            const audioEl = document.getElementById('diy-audio');
+            const currentData = userDIY[currentTemplateIdx];
+            if(!currentData.audio) {
+                alert("请先在编辑里填入歌曲音频链接！");
+                return;
+            }
+            if(audioPlaying) {
+                audioEl.pause();
+                audioPlaying = false;
+            } else {
+                audioEl.play();
+                audioPlaying = true;
+            }
+            lucide.createIcons();
+        }
+
+        // --- 日记逻辑（完全原样不动） ---
+        function previewImage() {
+            const file = document.getElementById('diary-file').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedImgBase64 = e.target.result;
+                    document.getElementById('img-preview').src = selectedImgBase64;
+                    document.getElementById('image-preview-box').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function cancelImage() {
+            selectedImgBase64 = null;
+            document.getElementById('image-preview-box').classList.add('hidden');
+            document.getElementById('diary-file').value = "";
+        }
+
+        function saveDiary() {
+            const text = document.getElementById('diary-input').value.trim();
+            if (!text && !selectedImgBase64) return;
+
+            const now = new Date();
+            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
+            userDiaries.unshift({
+                id: Date.now(),
+                time: timeStr,
+                text: text,
+                img: selectedImgBase64
+            });
+
+            localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+            document.getElementById('diary-input').value = "";
+            cancelImage();
+            renderDiaries();
+        }
+
+        function renderDiaries() {
+            const list = document.getElementById('diary-list');
+            list.innerHTML = userDiaries.map(item => `
+                <div class="matte-glass p-6 rounded-tc shadow-sm animate-[pop_0.4s]">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">${item.time}</span>
+                        ${isAdmin ? `<button onclick="deleteDiary(${item.id})" class="text-slate-300 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                    </div>
+                    <p class="text-slate-700 leading-relaxed text-base font-medium mb-4">${item.text}</p>
+                    ${item.img ? `<img src="${item.img}" onclick="zoomImg('${item.img}')" class="w-full rounded-3xl object-cover max-h-[400px] cursor-zoom-in hover:opacity-95 transition-all">` : ''}
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function deleteDiary(id) {
+            if(!confirm("确定抹除这段记录吗？")) return;
+            userDiaries = userDiaries.filter(d => d.id !== id);
+            localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+            renderDiaries();
+        }
+
+        function zoomImg(src) {
+            document.getElementById('zoomed-img').src = src;
+            document.getElementById('zoom-overlay').classList.remove('hidden');
+        }
+
+        // --- 初始化启动 ---
+        window.onload = () => {
+            lucide.createIcons();
+            updateDiyUI();
+            renderDiaries();
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = 0;
+                setTimeout(() => document.getElementById('loader').remove(), 500);
+            }, 1000);
+        };
+    </script>
+
+    <style>
+        @keyframes pop {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</body>
+</html>
