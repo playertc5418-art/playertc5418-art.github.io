@@ -11,22 +11,44 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        :root {
+            --ink: #F8FAFC;
+            --muted: rgba(248, 250, 252, 0.64);
+            --line: rgba(255, 255, 255, 0.14);
+            --panel: rgba(255, 255, 255, 0.08);
+            --panel-strong: rgba(255, 255, 255, 0.14);
+            --accent: #D8B66D;
+            --hot: #E11D48;
+            --deep: #070A0F;
+        }
         body {
             font-family: 'Inter', 'Microsoft YaHei', sans-serif;
-            background-color: #F8FAFC;
-            color: #0F172A;
+            min-height: 100vh;
+            background: #f8fafc;
+            color: #070A0F;
             -webkit-tap-highlight-color: transparent;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(7,10,15,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(7,10,15,0.05) 1px, transparent 1px);
+            background-size: 72px 72px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent 75%);
+            z-index: -1;
         }
         /* 哑光磨砂质感 */
         .matte-glass {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(22px) saturate(140%);
+            border: 1px solid rgba(7,10,15,0.12);
+            box-shadow: 0 18px 60px rgba(0,0,0,0.08);
         }
         .matte-dark {
-            background: rgba(30, 41, 59, 0.85);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(7, 10, 15, 0.82);
+            backdrop-filter: blur(22px) saturate(150%);
+            border: 1px solid var(--line);
         }
         /* 隐藏滚动条 */
         ::-webkit-scrollbar { width: 0px; }
@@ -38,7 +60,7 @@
         .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
 
         /* 大利落圆角自定义 */
-        .rounded-tc { border-radius: 2.5rem; }
+        .rounded-tc { border-radius: 2rem; }
         
         /* 按钮悬浮动效 */
         .btn-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
@@ -47,38 +69,560 @@
         /* 编辑模式隐藏元素 */
         .admin-only { display: none; }
         body.is-admin .admin-only { display: block; }
+        .tc-nav {
+            width: calc(100% - 36px);
+            left: 50%;
+            top: 14px;
+            transform: translateX(-50%);
+            border-radius: 1.25rem;
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+            pointer-events: none;
+        }
+        .nav-island {
+            pointer-events: auto;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(7,10,15,0.12);
+            box-shadow: 0 14px 42px rgba(0,0,0,0.08);
+        }
+        .brand-chip {
+            background: #070A0F;
+            color: #fff;
+            box-shadow: 0 12px 34px rgba(7,10,15,0.16);
+        }
+        .hero-shell {
+            position: relative;
+            width: min(100%, calc(100% - 128px));
+            margin: 0 auto;
+        }
+        .hero-shell::before {
+            content: "";
+            position: absolute;
+            inset: -28px;
+            border-radius: 2.6rem;
+            background: rgba(7,10,15,0.08);
+            filter: blur(18px);
+            z-index: -1;
+        }
+        #diy-banner {
+            border: 1px solid rgba(7,10,15,0.12);
+            background: #070A0F;
+            box-shadow: 0 32px 90px rgba(0,0,0,0.18);
+        }
+        #diy-banner::after {
+            display: none;
+        }
+        .tc-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: white;
+        }
+        .floating-panel {
+            background: rgba(255,255,255,0.9);
+            color: #0F172A;
+            border: 1px solid rgba(255,255,255,0.42);
+        }
+        .diary-card {
+            background: #fff;
+            border: 1px solid rgba(7,10,15,0.12);
+            color: #070A0F;
+        }
+        .diary-card p { color: rgba(7,10,15,0.76); }
+        .cursor {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
+            pointer-events: none;
+        }
+        .cursor__dot1,
+        .cursor__dot2,
+        .cursor__trail {
+            position: fixed;
+            left: 0;
+            top: 0;
+            border-radius: 999px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate3d(-50%, -50%, 0) scale(0);
+            transition: opacity 0.16s ease, width 0.22s ease, height 0.22s ease, background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+        }
+        .cursor__trail {
+            width: 96px;
+            height: 96px;
+            background: rgba(236, 72, 153, 0.38);
+            z-index: 0;
+        }
+        .cursor__dot1 {
+            width: 10px;
+            height: 10px;
+            background: #070A0F;
+            z-index: 2;
+        }
+        .cursor__dot2 {
+            display: grid;
+            width: 96px;
+            height: 96px;
+            place-items: center;
+            background: #fff;
+            color: #070A0F;
+            box-shadow: 0 18px 60px rgba(0,0,0,0.18);
+            z-index: 1;
+        }
+        .cursor__text {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: 0.08em;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .cursor.is-active .cursor__dot1,
+        .cursor.is-active .cursor__dot2,
+        .cursor.is-active .cursor__trail {
+            opacity: 1;
+            transform: translate3d(var(--x, -100px), var(--y, -100px), 0) translate(-50%, -50%) scale(1);
+        }
+        .cursor__trail {
+            opacity: 0;
+        }
+        .cursor.is-fast .cursor__trail {
+            opacity: 1;
+        }
+        .cursor.is-larger .cursor__dot1 {
+            width: 18px;
+            height: 18px;
+        }
+        .cursor.is-larger .cursor__dot2 {
+            width: 96px;
+            height: 96px;
+            background: #fff;
+            color: #070A0F;
+        }
+        .showcase-kicker {
+            color: #070A0F;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+        }
+        .showcase-head {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        .reveal-title {
+            position: relative;
+            display: inline-block;
+            overflow: visible;
+            border-radius: 1rem;
+            background: transparent;
+            color: #070A0F;
+            line-height: 0.9;
+            --mask-x: 50%;
+            --mask-y: 50%;
+            --mask-size: 0px;
+        }
+        .reveal-title span {
+            display: block;
+            padding: clamp(8px, 1.8vw, 18px) clamp(10px, 2vw, 22px);
+            font-size: clamp(52px, 12vw, 140px);
+            font-weight: 900;
+            letter-spacing: 0;
+            white-space: nowrap;
+        }
+        .reveal-title .back {
+            position: absolute;
+            inset: 0;
+            display: block;
+            overflow: hidden;
+            border-radius: 1rem;
+            background: #070A0F;
+            color: #fff;
+            clip-path: circle(var(--mask-size) at var(--mask-x) var(--mask-y));
+            pointer-events: none;
+            transition: clip-path 0.08s linear;
+        }
+        .reveal-title.is-revealing {
+            --mask-size: 104px;
+        }
+        .showcase-note {
+            max-width: 390px;
+            color: var(--muted);
+            font-size: 15px;
+        }
+        .theme-slider {
+            margin-top: 10px;
+        }
+        .display-title {
+            color: #fff;
+            -webkit-text-stroke: 2px #070A0F;
+            text-shadow: 0 2px 0 #070A0F, 0 -2px 0 #070A0F, 2px 0 0 #070A0F, -2px 0 0 #070A0F, 0 12px 34px rgba(0,0,0,0.38);
+        }
+        .display-desc {
+            color: #fff;
+            font-weight: 650;
+            text-shadow: 0 1px 0 #070A0F, 0 -1px 0 #070A0F, 1px 0 0 #070A0F, -1px 0 0 #070A0F, 0 8px 24px rgba(0,0,0,0.42);
+        }
+        .display-scene {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #56514b;
+        }
+        .display-copy {
+            position: absolute;
+            left: clamp(14px, 3vw, 48px);
+            bottom: clamp(18px, 4vh, 42px);
+            z-index: 3;
+            max-width: min(560px, 46%);
+            transition: opacity 0.28s ease, transform 0.28s ease;
+        }
+        .display-media {
+            position: absolute;
+            left: max(36%, calc(100% - min(58vw, 780px) - clamp(28px, 7vw, 110px)));
+            right: clamp(28px, 7vw, 110px);
+            top: 50%;
+            bottom: auto;
+            z-index: 7;
+            aspect-ratio: 1.45;
+            border-radius: 999px;
+            overflow: hidden;
+            transform: translateY(-50%);
+            box-shadow: 0 30px 90px rgba(0,0,0,0.26);
+            transition: left 0.78s cubic-bezier(0.19, 1, 0.22, 1), right 0.78s cubic-bezier(0.19, 1, 0.22, 1), top 0.78s cubic-bezier(0.19, 1, 0.22, 1), bottom 0.78s cubic-bezier(0.19, 1, 0.22, 1), aspect-ratio 0.78s cubic-bezier(0.19, 1, 0.22, 1), border-radius 0.78s cubic-bezier(0.19, 1, 0.22, 1), transform 0.78s cubic-bezier(0.19, 1, 0.22, 1), box-shadow 0.78s cubic-bezier(0.19, 1, 0.22, 1), background 0.78s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .display-media img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .display-media .media-crop {
+            object-fit: cover;
+            object-position: 42% 50%;
+            filter: saturate(0.86) contrast(0.96);
+            transform: scale(1.75);
+            transition: transform 0.78s cubic-bezier(0.19, 1, 0.22, 1), filter 0.78s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .display-media:hover {
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            aspect-ratio: auto;
+            border-radius: 0;
+            transform: translateY(0);
+            box-shadow: none;
+            background: #56514b;
+        }
+        .display-media:hover .media-crop {
+            filter: none;
+            animation: revealFullImage 0.78s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+        .display-scene:has(.display-media:hover) .display-copy {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+        @keyframes revealFullImage {
+            0% {
+                object-fit: cover;
+                object-position: 42% 50%;
+                transform: scale(1.75);
+            }
+            100% {
+                object-fit: contain;
+                object-position: center;
+                transform: scale(1);
+                background: #56514b;
+            }
+        }
+        .diary-image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 92px);
+            gap: 6px;
+            width: max-content;
+            max-width: 100%;
+        }
+        .diary-image {
+            width: 92px;
+            height: 92px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #f1f1f1;
+        }
+        .slider-btn {
+            display: grid;
+            width: 56px;
+            height: 56px;
+            place-items: center;
+            border: 1px solid rgba(7,10,15,0.16);
+            border-radius: 999px;
+            background: #fff;
+            color: #070A0F;
+            transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+        }
+        .hero-arrow {
+            position: absolute;
+            top: 50%;
+            z-index: 20;
+            transform: translateY(-50%);
+            box-shadow: 0 18px 54px rgba(0,0,0,0.16);
+        }
+        .hero-arrow.prev {
+            left: -82px;
+        }
+        .hero-arrow.next {
+            right: -82px;
+        }
+        .slider-btn:hover {
+            background: #070A0F;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        .theme-track {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(150px, 1fr);
+            gap: 14px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding: 8px 2px 2px;
+        }
+        .theme-pill {
+            position: relative;
+            display: inline-block;
+            min-height: 48px;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #070A0F;
+            padding: 0 20px;
+            line-height: 45px;
+            text-align: center;
+            scroll-snap-align: center;
+            text-decoration: none;
+            transition: color 0.25s ease, transform 0.25s ease;
+        }
+        .theme-pill::before,
+        .theme-pill::after {
+            content: "";
+            position: absolute;
+            width: 45px;
+            height: 2px;
+            background: #070A0F;
+            opacity: 0.22;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        .theme-pill::before {
+            top: 0;
+            left: 0;
+            transform: rotate(90deg);
+            transform-origin: 0 0;
+        }
+        .theme-pill::after {
+            right: 0;
+            bottom: 0;
+            transform: rotate(90deg);
+            transform-origin: 100% 0;
+        }
+        .theme-pill strong,
+        .theme-pill span {
+            display: block;
+        }
+        .theme-pill strong {
+            font-size: 12px;
+            letter-spacing: 0.14em;
+        }
+        .theme-pill span {
+            display: none;
+            margin-top: 4px;
+            color: rgba(7,10,15,0.54);
+            font-size: 12px;
+        }
+        .theme-pill.active,
+        .theme-pill:hover {
+            color: #070A0F;
+            transform: translateY(-3px);
+        }
+        .theme-pill.active::before,
+        .theme-pill.active::after,
+        .theme-pill:hover::before,
+        .theme-pill:hover::after,
+        .theme-pill:focus::before,
+        .theme-pill:focus::after {
+            opacity: 1;
+        }
+        .theme-pill.active::before,
+        .theme-pill:hover::before,
+        .theme-pill:focus::before {
+            left: 50%;
+            transform: rotate(0deg) translateX(-50%);
+        }
+        .theme-pill.active::after,
+        .theme-pill:hover::after,
+        .theme-pill:focus::after {
+            right: 50%;
+            transform: rotate(0deg) translateX(50%);
+        }
+        .hover-target {
+            cursor: none;
+        }
+        @media (max-width: 840px) {
+            .cursor { display: none; }
+            .hover-target { cursor: auto; }
+            .tc-nav {
+                top: 10px;
+                width: calc(100% - 18px);
+                padding: 0;
+            }
+            .tc-nav .flex:last-child {
+                width: auto;
+                max-width: 100%;
+            }
+            main {
+                margin-top: 112px !important;
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+            .showcase-head {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-bottom: 18px;
+            }
+            .showcase-note {
+                max-width: none;
+            }
+            #diy-banner {
+                height: min(66vh, 520px) !important;
+                min-height: 420px !important;
+                border-radius: 1.35rem;
+            }
+            .display-copy {
+                left: 14px;
+                right: 22px;
+                bottom: 28px;
+                max-width: none;
+            }
+            .display-media {
+                left: 18px;
+                right: 18px;
+                top: 36%;
+            }
+            .diary-image-grid {
+                grid-template-columns: repeat(3, minmax(72px, 1fr));
+                width: min(100%, 288px);
+            }
+            .diary-image {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1;
+            }
+            .theme-slider {
+                grid-template-columns: 1fr;
+            }
+            .hero-arrow {
+                width: 44px;
+                height: 44px;
+            }
+            .hero-arrow.prev {
+                left: 10px;
+            }
+            .hero-arrow.next {
+                right: 10px;
+            }
+            .theme-track {
+                grid-auto-columns: minmax(132px, 60%);
+                padding-bottom: 4px;
+            }
+        }
+        @media (max-width: 520px) {
+            .tc-nav {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .tc-nav .flex:last-child {
+                width: 100%;
+            }
+            .tc-nav button {
+                flex: 1;
+            }
+            main {
+                margin-top: 152px !important;
+            }
+            .reveal-title span {
+                font-size: clamp(38px, 16vw, 72px);
+            }
+            #diy-banner {
+                height: 62vh !important;
+                min-height: 360px !important;
+            }
+        }
     </style>
 </head>
 <body class="overflow-x-hidden">
-
-    <!-- 加载动画 -->
-    <div id="loader" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#0F172A]">
-        <div class="w-16 h-[1px] bg-white/20 relative overflow-hidden">
-            <div class="absolute inset-0 bg-[#E11D48] translate-x-[-100%] animate-[loading_1.5s_infinite]"></div>
+    <div id="magic-cursor" class="cursor">
+        <div class="cursor__trail"></div>
+        <div class="cursor__dot1"></div>
+        <div class="cursor__dot2">
+            <p class="cursor__text">DRAG</p>
         </div>
     </div>
-    <style>@keyframes loading { to { transform: translateX(100%); } }</style>
+
+    <!-- 加载动画 -->
+    <div id="loader" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#F8FAFC] text-[#070A0F]">
+        <div class="w-[min(420px,calc(100%-48px))] text-center">
+            <div class="mx-auto mb-8 grid h-24 w-24 place-items-center rounded-full border border-black/15 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.08)]">
+                <span class="text-2xl font-black tracking-[-0.08em]">TC</span>
+            </div>
+            <div class="mb-4 flex items-center justify-between text-[10px] font-black tracking-[0.36em]">
+                <span>SPACE</span>
+                <span>LOADING</span>
+            </div>
+            <div class="h-[2px] bg-black/10 relative overflow-hidden">
+                <div class="loader-line absolute inset-y-0 left-0 w-1/3 bg-[#070A0F]"></div>
+            </div>
+            <div class="mt-6 h-px w-full bg-black/10"></div>
+        </div>
+    </div>
+    <style>
+        @keyframes loading { to { transform: translateX(420%); } }
+        .loader-line { animation: loading 1.35s cubic-bezier(0.76, 0, 0.24, 1) infinite; transform: translateX(-120%); }
+    </style>
 
     <!-- 顶部导航 -->
-    <nav class="fixed top-0 w-full z-50 matte-glass px-6 py-4 flex justify-between items-center border-b border-slate-200/50">
-        <div id="admin-trigger" class="text-xl font-bold tracking-tighter flex items-center gap-2 cursor-pointer select-none">
-            <span class="w-9 h-9 bg-[#0F172A] rounded-xl flex items-center justify-center text-white text-sm">TC</span>
-            <span class="hidden sm:block text-[#0F172A]">SPACE</span>
+    <nav class="tc-nav fixed z-50 flex justify-between items-start">
+        <div id="admin-trigger" class="nav-island px-4 py-3 rounded-[1.2rem] text-xl font-bold tracking-tighter flex items-center gap-2 cursor-pointer select-none">
+            <span class="brand-chip w-9 h-9 rounded-xl flex items-center justify-center text-sm">TC</span>
+            <span class="hidden sm:block text-[#070A0F]">SPACE</span>
         </div>
-        <div class="flex gap-2 p-1 bg-slate-100 rounded-[1.2rem]">
-            <button onclick="switchTab('diy')" id="btn-diy" class="px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#0F172A] text-white">个人展示</button>
-            <button onclick="switchTab('diary')" id="btn-diary" class="px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-slate-500">随身日记</button>
+        <div class="nav-island flex gap-2 p-1 rounded-[1.2rem]">
+            <button onclick="switchTab('diy')" id="btn-diy" class="px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#070A0F] text-white">个人展示</button>
+            <button onclick="switchTab('diary')" id="btn-diary" class="px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-black/55">随身日记</button>
         </div>
     </nav>
 
     <!-- 内容区 -->
-    <main class="mt-24 pb-12 px-4 sm:px-8 max-w-5xl mx-auto">
+    <main class="mt-28 pb-10 px-4 sm:px-8 max-w-[1400px] mx-auto">
         
         <!-- 板块1：全能DIY展示台（支持HTML代码直接渲染） -->
         <section id="content-diy" class="tab-content active section-fade">
-            <div class="relative group">
+            <div class="showcase-head">
+                <h1 class="reveal-title hover-target" data-title-reveal>
+                    <span class="front">TC的网站</span>
+                    <span class="back">天天开心</span>
+                </h1>
+            </div>
+            <div class="hero-shell relative group">
                 <!-- DIY Banner 渲染容器 -->
-                <div id="diy-banner" class="w-full h-[550px] rounded-tc overflow-hidden relative shadow-2xl transition-all duration-700">
+                <div id="diy-banner" class="w-full h-[min(72vh,760px)] min-h-[560px] rounded-tc overflow-hidden relative shadow-2xl transition-all duration-700">
                     <!-- 这里会渲染：普通文字内容 或 你粘贴的HTML代码 -->
                     <div id="diy-render-container" class="w-full h-full"></div>
                     
@@ -91,21 +635,20 @@
                     <button onclick="toggleAudio()" id="audio-btn" class="admin-only absolute top-6 right-6 p-3 matte-glass rounded-2xl hover:bg-white transition-all z-10">
                         <i data-lucide="music" class="w-5 h-5"></i>
                     </button>
-                    <audio id="diy-audio" preload="auto">
+                    <audio id="diy-audio" preload="auto"></audio>
                 </div>
+                <button onclick="changeTemplate(-1)" class="slider-btn hero-arrow prev hover-target" type="button" data-cursor="上一个" data-cursor-mode="image">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <button onclick="changeTemplate(1)" class="slider-btn hero-arrow next hover-target" type="button" data-cursor="下一个" data-cursor-mode="image">
+                    <i data-lucide="chevron-right"></i>
+                </button>
 
-                <!-- 切换箭头 -->
-                <div class="flex justify-between items-center mt-8 px-4">
-                    <div class="flex gap-2">
-                        <button onclick="changeTemplate(-1)" class="p-4 rounded-full border border-slate-200 hover:bg-[#0F172A] hover:text-white transition-all btn-hover">
-                            <i data-lucide="chevron-left"></i>
-                        </button>
-                        <button onclick="changeTemplate(1)" class="p-4 rounded-full border border-slate-200 hover:bg-[#0F172A] hover:text-white transition-all btn-hover">
-                            <i data-lucide="chevron-right"></i>
-                        </button>
-                    </div>
-                    <div id="template-indicator" class="text-xs font-bold tracking-widest text-slate-400">01 / 04</div>
+                <!-- T.RICKS 风格主题滑块 -->
+                <div class="theme-slider">
+                    <div id="theme-track" class="theme-track" aria-label="主题滑块"></div>
                 </div>
+                <div id="template-indicator" class="mt-5 text-xs font-bold tracking-widest text-black/40 text-right">01 / 04</div>
             </div>
         </section>
 
@@ -120,12 +663,19 @@
                             <i data-lucide="camera" class="w-5 h-5"></i>
                         </div>
                         <span class="text-sm font-semibold">加入视觉记录</span>
-                        <input type="file" id="diary-file" accept="image/*" class="hidden" onchange="previewImage()">
+                        <input type="file" id="diary-file" accept="image/*" class="hidden" multiple onchange="previewImage()">
                     </label>
                     <button onclick="saveDiary()" class="bg-[#0F172A] text-white px-10 py-3 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-lg">发布</button>
                 </div>
-                <div id="image-preview-box" class="mt-4 hidden relative w-24 h-24">
-                    <img id="img-preview" class="w-full h-full object-cover rounded-2xl">
+                <div class="flex flex-wrap gap-3 mt-4">
+                    <button onclick="exportBackup()" class="px-4 py-2 rounded-2xl bg-white/80 text-slate-700 text-sm font-bold hover:bg-white transition-all" type="button">导出备份</button>
+                    <label class="px-4 py-2 rounded-2xl bg-white/80 text-slate-700 text-sm font-bold hover:bg-white transition-all cursor-pointer">
+                        导入备份
+                        <input type="file" accept="application/json" class="hidden" onchange="importBackup(this)">
+                    </label>
+                </div>
+                <div id="image-preview-box" class="mt-4 hidden relative">
+                    <div id="preview-grid" class="diary-image-grid"></div>
                     <button onclick="cancelImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
                 </div>
             </div>
@@ -142,7 +692,7 @@
 
     <!-- DIY编辑弹窗（新增：普通模式 + HTML代码模式 双切换） -->
     <div id="edit-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl animate-[pop_0.3s] max-h-[90vh] overflow-y-auto">
+        <div class="floating-panel w-full max-w-2xl rounded-[2rem] p-8 shadow-2xl animate-[pop_0.3s] max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-bold mb-4 flex items-center gap-2"><i data-lucide="settings-2"></i> 自定义设置</h3>
             
             <!-- 模式切换按钮 -->
@@ -168,6 +718,11 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">背景图片链接 (IMAGE URL)</label>
                     <input type="text" id="edit-img" class="w-full p-4 bg-slate-100 rounded-2xl border-none focus:ring-2 focus:ring-slate-900" placeholder="氛围感背景图">
+                    <label class="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-2xl bg-slate-900 text-white text-sm font-bold cursor-pointer">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        本地上传图片
+                        <input type="file" accept="image/*" class="hidden" onchange="handleDiyImageUpload(this)">
+                    </label>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">歌曲音频链接 (AUDIO URL)【可选】</label>
@@ -178,7 +733,7 @@
             <!-- HTML代码模式内容（核心新增） -->
             <div id="code-mode-panel" class="hidden">
                 <label class="block text-xs font-bold text-slate-400 mb-2 tracking-widest">粘贴AI生成的HTML代码（直接渲染到展示区）</label>
-                <textarea id="edit-html-code" class="w-full p-4 bg-slate-900 text-green-400 rounded-2xl border-none focus:ring-2 focus:ring-green-500 h-90 font-mono text-sm" placeholder="把AI给你的HTML代码全部粘贴到这里，保存后立刻生效！"></textarea>
+                <textarea id="edit-html-code" class="w-full p-4 bg-slate-900 text-green-400 rounded-2xl border-none focus:ring-2 focus:ring-green-500 h-96 font-mono text-sm" placeholder="把AI给你的HTML代码全部粘贴到这里，保存后立刻生效！"></textarea>
                 <p class="text-xs text-slate-400 mt-2">⚠️ 粘贴后自动覆盖普通模式的内容，清空代码则恢复普通模式</p>
             </div>
 
@@ -199,32 +754,45 @@
         let isAdmin = false;
         let currentTemplateIdx = 0;
         let selectedImgBase64 = null;
+        let selectedDiaryImages = [];
         let audioPlaying = false;
         let currentEditMode = 'normal'; // 默认普通模式
+        let cursorReady = false;
+        let cursorLoopStarted = false;
+        const themeLabels = ["网站", "音乐", "签签", "涂鸦"];
+        const cursorState = {
+            x: 0,
+            y: 0,
+            dotX: 0,
+            dotY: 0,
+            trailX: 0,
+            trailY: 0,
+            initialized: false
+        };
 
         // 默认模板（新增 html 字段，存粘贴的代码）
         const defaultTemplates = [
-            { 
-                tag: "MAY 10", title: "母亲节快乐", desc: "岁月温柔，愿您每天都充满笑容，健康平安。感谢您生命中无私的陪伴。", 
-                img: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1200", 
+            {
+                tag: "BLESSING", title: "母亲节快乐", desc: "岁月温柔，愿您每天都充满笑容，健康平安。感谢您生命中无私的陪伴。",
+                img: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=1600",
                 audio: "",
                 html: "" // 代码模式：为空=用普通内容
             },
-            { 
-                tag: "MUSIC", title: "我的专属单曲", desc: "音乐是避难所，此刻循环喜欢的旋律。", 
-                img: "https://images.unsplash.com/photo-1514525253344-f814d074e015?q=80&w=1200", 
+            {
+                tag: "MUSIC", title: "我的专属单曲", desc: "音乐是避难所。把 mp3 链接贴进编辑框，就能保留成这一页的背景音乐。",
+                img: "https://images.unsplash.com/photo-1514525253344-f814d074e015?q=80&w=1600",
                 audio: "",
                 html: ""
             },
-            { 
-                tag: "QUOTES", title: "个人座右铭", desc: "克制而不廉价，高级源于对细节的极致追求。Stay cool, stay simple.", 
-                img: "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?q=80&w=1200", 
+            {
+                tag: "SIGN", title: "今日签签", desc: "把今天想留下的话写成一句签，像给未来的自己投递一张便签。",
+                img: "https://images.unsplash.com/photo-1470770903676-69b98201ea1c?q=80&w=1600",
                 audio: "",
                 html: ""
             },
-            { 
-                tag: "GRAFFITI", title: "今日涂鸦随笔", desc: "随性记录当下的心情，低饱和的生活质感。", 
-                img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1200", 
+            {
+                tag: "GRAFFITI", title: "今日涂鸦随笔", desc: "随性记录当下的心情，低饱和的生活质感。",
+                img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1600",
                 audio: "",
                 html: ""
             }
@@ -281,8 +849,141 @@
             document.getElementById('content-diy').classList.toggle('active', isDiy);
             document.getElementById('content-diary').classList.toggle('active', !isDiy);
             
-            document.getElementById('btn-diy').className = isDiy ? 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#0F172A] text-white' : 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-slate-500';
-            document.getElementById('btn-diary').className = !isDiy ? 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#0F172A] text-white' : 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-slate-500';
+            document.getElementById('btn-diy').className = isDiy ? 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#070A0F] text-white' : 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-black/55';
+            document.getElementById('btn-diary').className = !isDiy ? 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all bg-[#070A0F] text-white' : 'px-5 py-2 rounded-[1rem] text-sm font-semibold transition-all text-black/55';
+        }
+
+        function getThemeLabel(index = currentTemplateIdx) {
+            return themeLabels[index] || userDIY[index]?.tag || `主题${index + 1}`;
+        }
+
+        function renderThemeTrack() {
+            const track = document.getElementById('theme-track');
+            track.innerHTML = userDIY.map((item, index) => `
+                <button class="theme-pill ${index === currentTemplateIdx ? 'active' : ''}" type="button" data-index="${index}">
+                    <strong>${getThemeLabel(index)} ${String(index + 1).padStart(2, '0')}</strong>
+                    <span>${item.tag || item.title || '自定义主题'}</span>
+                </button>
+            `).join('');
+        }
+
+        function selectTemplate(index) {
+            document.getElementById('diy-audio').pause();
+            audioPlaying = false;
+            currentTemplateIdx = index;
+            updateDiyUI();
+        }
+
+        function initMagicCursor() {
+            const cursor = document.getElementById('magic-cursor');
+            const trail = cursor?.querySelector('.cursor__trail');
+            const dot1 = cursor?.querySelector('.cursor__dot1');
+            const dot2 = cursor?.querySelector('.cursor__dot2');
+            const text = cursor?.querySelector('.cursor__text');
+            if (!cursor || window.matchMedia('(max-width: 840px)').matches) return;
+            cursorReady = true;
+
+            window.addEventListener('pointermove', (event) => {
+                cursorState.x = event.clientX;
+                cursorState.y = event.clientY;
+                if (!cursorState.initialized) {
+                    cursorState.dotX = event.clientX;
+                    cursorState.dotY = event.clientY;
+                    cursorState.trailX = event.clientX;
+                    cursorState.trailY = event.clientY;
+                    cursorState.initialized = true;
+                }
+            });
+
+            document.addEventListener('pointerover', (event) => {
+                const target = event.target.closest('[data-cursor]');
+                if (!target) return;
+                text.textContent = target.dataset.cursor || 'DRAG';
+                cursor.classList.add('is-active', 'is-larger');
+            });
+
+            document.addEventListener('pointerout', (event) => {
+                if (!event.target.closest('[data-cursor]')) return;
+                cursor.classList.remove('is-active', 'is-larger', 'is-fast');
+            });
+
+            if (!cursorLoopStarted) {
+                cursorLoopStarted = true;
+                const tick = () => {
+                    const dx = cursorState.x - cursorState.dotX;
+                    const dy = cursorState.y - cursorState.dotY;
+                    const speed = Math.hypot(dx, dy);
+                    cursorState.dotX += dx * 0.18;
+                    cursorState.dotY += dy * 0.18;
+                    cursorState.trailX += (cursorState.dotX - cursorState.trailX) * 0.08;
+                    cursorState.trailY += (cursorState.dotY - cursorState.trailY) * 0.08;
+
+                    dot1.style.transform = `translate3d(${cursorState.x}px, ${cursorState.y}px, 0) translate(-50%, -50%)`;
+                    trail.style.transform = `translate3d(${cursorState.trailX}px, ${cursorState.trailY}px, 0) translate(-50%, -50%)`;
+                    dot2.style.transform = `translate3d(${cursorState.dotX}px, ${cursorState.dotY}px, 0) translate(-50%, -50%)`;
+                    cursor.classList.toggle('is-fast', cursor.classList.contains('is-active') && speed > 16);
+                    requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            }
+        }
+
+        function initTitleReveal() {
+            const title = document.querySelector('[data-title-reveal]');
+            if (!title) return;
+
+            title.addEventListener('pointerenter', () => {
+                title.classList.add('is-revealing');
+            });
+
+            title.addEventListener('pointermove', (event) => {
+                const rect = title.getBoundingClientRect();
+                title.style.setProperty('--mask-x', `${event.clientX - rect.left}px`);
+                title.style.setProperty('--mask-y', `${event.clientY - rect.top}px`);
+            });
+
+            title.addEventListener('pointerleave', () => {
+                title.classList.remove('is-revealing');
+            });
+        }
+
+        function initSliderDrag() {
+            const track = document.getElementById('theme-track');
+            let isDown = false;
+            let startX = 0;
+            let startScroll = 0;
+            let moved = false;
+            let pressedPill = null;
+
+            track.addEventListener('pointerdown', (event) => {
+                isDown = true;
+                moved = false;
+                pressedPill = event.target.closest('.theme-pill');
+                startX = event.clientX;
+                startScroll = track.scrollLeft;
+                track.setPointerCapture(event.pointerId);
+            });
+
+            track.addEventListener('pointermove', (event) => {
+                if (!isDown) return;
+                const delta = event.clientX - startX;
+                if (Math.abs(delta) > 6) moved = true;
+                track.scrollLeft = startScroll - delta;
+            });
+
+            track.addEventListener('pointerup', () => {
+                if (!moved && pressedPill) {
+                    selectTemplate(Number(pressedPill.dataset.index));
+                }
+                isDown = false;
+                pressedPill = null;
+                setTimeout(() => { moved = false; }, 0);
+            });
+
+            track.addEventListener('pointercancel', () => {
+                isDown = false;
+                pressedPill = null;
+            });
         }
 
         // --- DIY 核心逻辑（HTML代码渲染 + 普通模式） ---
@@ -290,25 +991,33 @@
             const data = userDIY[currentTemplateIdx];
             const container = document.getElementById('diy-render-container');
             const audioEl = document.getElementById('diy-audio');
+            document.getElementById('diy-banner').dataset.cursor = getThemeLabel();
             
-            // 核心：如果有HTML代码，直接渲染；没有就用普通文字模式
+            // 核心：如果有HTML代码，用 iframe 隔离渲染；没有就用普通文字模式
             if(data.html && data.html.trim() !== '') {
-                container.innerHTML = data.html;
+                container.innerHTML = `<iframe class="tc-frame" title="自定义HTML预览" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>`;
+                container.querySelector('iframe').srcdoc = data.html;
             } else {
                 // 普通模式：渲染文字+背景图
                 container.innerHTML = `
-                    <img id="diy-img" src="${data.img}" class="w-full h-full object-cover brightness-[0.7]" alt="bg">
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#0F172A]/90 via-transparent to-transparent"></div>
-                    <div class="absolute bottom-12 left-8 right-8 md:left-12 md:right-12">
-                        <span class="px-4 py-1.5 rounded-full border border-white/30 text-white text-[10px] tracking-[0.2em] font-bold mb-6 inline-block backdrop-blur-sm">${data.tag}</span>
-                        <h1 class="text-white text-5xl md:text-7xl font-bold tracking-tight mb-4 leading-tight">${data.title.replace(/\n/g, '<br>')}</h1>
-                        <p class="text-white/70 text-lg md:text-xl font-light leading-relaxed max-w-xl">${data.desc}</p>
+                    <div class="display-scene">
+                        <div class="display-copy pointer-events-none">
+                            <span class="px-4 py-1.5 rounded-full border border-white/20 bg-black text-white text-[10px] tracking-[0.24em] font-bold inline-block mb-6">${data.tag}</span>
+                            <h1 class="display-title text-5xl md:text-7xl font-bold tracking-tight mb-5 leading-[0.95]">${data.title.replace(/\n/g, '<br>')}</h1>
+                            <p class="display-desc text-base md:text-xl leading-relaxed max-w-2xl">${data.desc}</p>
+                        </div>
+                        <div class="display-media hover-target" data-cursor="${getThemeLabel()}" data-cursor-mode="image">
+                            <img class="media-crop" id="diy-img" src="${data.img}" alt="bg">
+                        </div>
                     </div>
                 `;
             }
 
             // 更新指示器
             document.getElementById('template-indicator').innerText = `0${currentTemplateIdx + 1} / 0${userDIY.length}`;
+            renderThemeTrack();
+            const activeTheme = document.querySelector('.theme-pill.active');
+            if (activeTheme) activeTheme.scrollIntoView({behavior: cursorReady ? 'smooth' : 'auto', block: 'nearest', inline: 'center'});
             
             // 加载音频
             if(data.audio) {
@@ -352,6 +1061,16 @@
         // 关闭编辑弹窗
         function closeEditModal() {
             document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        function handleDiyImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('edit-img').value = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         // 保存DIY内容（核心：区分两种模式）
@@ -401,29 +1120,43 @@
             lucide.createIcons();
         }
 
-        // --- 日记逻辑（完全原样不动） ---
+        function escapeText(text = '') {
+            return String(text)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        // --- 日记逻辑：保留原保存方式，增加管理员实时编辑 ---
         function previewImage() {
-            const file = document.getElementById('diary-file').files[0];
-            if (file) {
+            const files = Array.from(document.getElementById('diary-file').files).slice(0, 9);
+            if (!files.length) return;
+
+            Promise.all(files.map(file => new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    selectedImgBase64 = e.target.result;
-                    document.getElementById('img-preview').src = selectedImgBase64;
-                    document.getElementById('image-preview-box').classList.remove('hidden');
-                };
+                reader.onload = (e) => resolve(e.target.result);
                 reader.readAsDataURL(file);
-            }
+            }))).then((images) => {
+                selectedDiaryImages = images;
+                selectedImgBase64 = images[0] || null;
+                document.getElementById('preview-grid').innerHTML = selectedDiaryImages.map(img => `<img src="${img}" class="diary-image" alt="预览图">`).join('');
+                document.getElementById('image-preview-box').classList.remove('hidden');
+            });
         }
 
         function cancelImage() {
             selectedImgBase64 = null;
+            selectedDiaryImages = [];
             document.getElementById('image-preview-box').classList.add('hidden');
+            document.getElementById('preview-grid').innerHTML = "";
             document.getElementById('diary-file').value = "";
         }
 
         function saveDiary() {
             const text = document.getElementById('diary-input').value.trim();
-            if (!text && !selectedImgBase64) return;
+            if (!text && !selectedDiaryImages.length) return;
 
             const now = new Date();
             const timeStr = `${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -432,7 +1165,8 @@
                 id: Date.now(),
                 time: timeStr,
                 text: text,
-                img: selectedImgBase64
+                img: selectedDiaryImages[0] || selectedImgBase64,
+                imgs: selectedDiaryImages
             });
 
             localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
@@ -444,16 +1178,68 @@
         function renderDiaries() {
             const list = document.getElementById('diary-list');
             list.innerHTML = userDiaries.map(item => `
-                <div class="matte-glass p-6 rounded-tc shadow-sm animate-[pop_0.4s]">
+                <div class="diary-card p-6 rounded-tc shadow-sm animate-[pop_0.4s]">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">${item.time}</span>
-                        ${isAdmin ? `<button onclick="deleteDiary(${item.id})" class="text-slate-300 hover:text-red-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                        <span class="text-[10px] font-bold tracking-[0.2em] text-black/45 uppercase">${item.time}</span>
+                        ${isAdmin ? `<button onclick="deleteDiary(${item.id})" class="text-black/35 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
                     </div>
-                    <p class="text-slate-700 leading-relaxed text-base font-medium mb-4">${item.text}</p>
-                    ${item.img ? `<img src="${item.img}" onclick="zoomImg('${item.img}')" class="w-full rounded-3xl object-cover max-h-[400px] cursor-zoom-in hover:opacity-95 transition-all">` : ''}
+                    <p class="leading-relaxed text-base font-medium mb-4 outline-none rounded-xl p-2 -mx-2 focus:bg-black/5" ${isAdmin ? `contenteditable="true" onblur="updateDiaryText(${item.id}, this.innerText)"` : ''}>${escapeText(item.text)}</p>
+                    ${renderDiaryImages(item)}
                 </div>
             `).join('');
             lucide.createIcons();
+        }
+
+        function renderDiaryImages(item) {
+            const images = Array.isArray(item.imgs) && item.imgs.length ? item.imgs : (item.img ? [item.img] : []);
+            if (!images.length) return "";
+            return `<div class="diary-image-grid">${images.map(img => `<img src="${img}" onclick="zoomImg('${img}')" class="diary-image cursor-zoom-in hover:opacity-95 transition-all" alt="日记图片">`).join('')}</div>`;
+        }
+
+        function updateDiaryText(id, text) {
+            userDiaries = userDiaries.map(d => d.id === id ? {...d, text: text.trim()} : d);
+            localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+        }
+
+        function exportBackup() {
+            const data = {
+                app: "tc-space",
+                exportedAt: new Date().toISOString(),
+                diy: userDIY,
+                diaries: userDiaries
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `tc-space-backup-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importBackup(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data.diy) || !Array.isArray(data.diaries)) throw new Error();
+                    userDIY = data.diy;
+                    userDiaries = data.diaries;
+                    localStorage.setItem('tc_diy_data', JSON.stringify(userDIY));
+                    localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+                    currentTemplateIdx = 0;
+                    updateDiyUI();
+                    renderDiaries();
+                    alert("备份已导入");
+                } catch {
+                    alert("导入失败：请选择本页面导出的 JSON 备份。");
+                } finally {
+                    input.value = "";
+                }
+            };
+            reader.readAsText(file);
         }
 
         function deleteDiary(id) {
@@ -471,6 +1257,9 @@
         // --- 初始化启动 ---
         window.onload = () => {
             lucide.createIcons();
+            initMagicCursor();
+            initTitleReveal();
+            initSliderDrag();
             updateDiyUI();
             renderDiaries();
             setTimeout(() => {
