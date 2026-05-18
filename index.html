@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase cloud sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --ink: #F8FAFC;
@@ -760,6 +762,12 @@
         let cursorReady = false;
         let cursorLoopStarted = false;
         const themeLabels = ["网站", "音乐", "签签", "涂鸦"];
+        const SUPABASE_URL = "https://qhynewvntruqnvbityun.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_z4D8t-eyoFZBJ1rV3WXIkQ_4RfMs5Gl";
+        const CLOUD_TABLE = "tc_space_state";
+        const CLOUD_KEY = "main";
+        let supabaseClient = null;
+        let cloudReady = false;
         const cursorState = {
             x: 0,
             y: 0,
@@ -798,8 +806,86 @@
             }
         ];
 
-        let userDIY = JSON.parse(localStorage.getItem('tc_diy_data')) || defaultTemplates;
-        let userDiaries = JSON.parse(localStorage.getItem('tc_diary_data')) || [];
+        function readLocalJSON(key, fallback) {
+            try {
+                const value = JSON.parse(localStorage.getItem(key));
+                return value ?? fallback;
+            } catch {
+                return fallback;
+            }
+        }
+
+        function writeLocalState() {
+            localStorage.setItem('tc_diy_data', JSON.stringify(userDIY));
+            localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+        }
+
+        let userDIY = readLocalJSON('tc_diy_data', defaultTemplates);
+        let userDiaries = readLocalJSON('tc_diary_data', []);
+
+        function hasLocalChanges() {
+            return JSON.stringify(userDIY) !== JSON.stringify(defaultTemplates) || userDiaries.length > 0;
+        }
+
+        function getCloudPayload() {
+            return {
+                diy: userDIY,
+                diaries: userDiaries,
+                updatedAt: new Date().toISOString()
+            };
+        }
+
+        async function initCloudSync() {
+            if (!window.supabase || !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) return;
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from(CLOUD_TABLE)
+                    .select('data')
+                    .eq('key', CLOUD_KEY)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (data?.data) {
+                    userDIY = Array.isArray(data.data.diy) ? data.data.diy : defaultTemplates;
+                    userDiaries = Array.isArray(data.data.diaries) ? data.data.diaries : [];
+                    writeLocalState();
+                } else if (hasLocalChanges()) {
+                    await persistState();
+                }
+
+                cloudReady = true;
+            } catch (error) {
+                console.warn('Supabase cloud sync unavailable:', error);
+                cloudReady = false;
+            }
+        }
+
+        async function persistState(options = {}) {
+            writeLocalState();
+            if (!supabaseClient) return false;
+
+            try {
+                const { error } = await supabaseClient
+                    .from(CLOUD_TABLE)
+                    .upsert({
+                        key: CLOUD_KEY,
+                        data: getCloudPayload(),
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'key' });
+
+                if (error) throw error;
+                cloudReady = true;
+                return true;
+            } catch (error) {
+                cloudReady = false;
+                console.warn('Supabase save failed:', error);
+                if (!options.quiet) alert("云端保存失败，已先保存到当前浏览器。请检查 Supabase 表和 RLS 权限。");
+                return false;
+            }
+        }
 
         // --- 核心逻辑：Admin模式（点击Logo 5次，密码tc888解锁） ---
         let clickCount = 0;
@@ -1063,18 +1149,42 @@
             document.getElementById('edit-modal').classList.add('hidden');
         }
 
-        function handleDiyImageUpload(input) {
+        function readFileAsDataURL(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function fileToCompressedDataURL(file, maxEdge = 1600, quality = 0.82) {
+            if (!file || file.type === 'image/gif') return readFileAsDataURL(file);
+
+            const rawUrl = await readFileAsDataURL(file);
+            return new Promise((resolve) => {
+                const image = new Image();
+                image.onload = () => {
+                    const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(image.width * scale));
+                    canvas.height = Math.max(1, Math.round(image.height * scale));
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                image.onerror = () => resolve(rawUrl);
+                image.src = rawUrl;
+            });
+        }
+
+        async function handleDiyImageUpload(input) {
             const file = input.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('edit-img').value = e.target.result;
-            };
-            reader.readAsDataURL(file);
+            document.getElementById('edit-img').value = await fileToCompressedDataURL(file, 1800, 0.84);
         }
 
         // 保存DIY内容（核心：区分两种模式）
-        function saveDIY() {
+        async function saveDIY() {
             const data = {};
             if(currentEditMode === 'code') {
                 // 代码模式：只保存HTML代码，清空普通字段
@@ -1094,12 +1204,11 @@
                 data.html = ""; // 清空代码，避免冲突
             }
 
-            // 保存到本地
             userDIY[currentTemplateIdx] = data;
-            localStorage.setItem('tc_diy_data', JSON.stringify(userDIY));
+            await persistState();
             updateDiyUI();
             closeEditModal();
-            alert("✅ 保存成功！展示区已更新");
+            alert(cloudReady ? "✅ 已保存到云端，换设备也能看到。" : "✅ 展示区已更新；云端暂不可用，已先保存到当前浏览器。");
         }
 
         // 音频播放/暂停
@@ -1134,11 +1243,7 @@
             const files = Array.from(document.getElementById('diary-file').files).slice(0, 9);
             if (!files.length) return;
 
-            Promise.all(files.map(file => new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.readAsDataURL(file);
-            }))).then((images) => {
+            Promise.all(files.map(file => fileToCompressedDataURL(file, 1200, 0.8))).then((images) => {
                 selectedDiaryImages = images;
                 selectedImgBase64 = images[0] || null;
                 document.getElementById('preview-grid').innerHTML = selectedDiaryImages.map(img => `<img src="${img}" class="diary-image" alt="预览图">`).join('');
@@ -1154,7 +1259,7 @@
             document.getElementById('diary-file').value = "";
         }
 
-        function saveDiary() {
+        async function saveDiary() {
             const text = document.getElementById('diary-input').value.trim();
             if (!text && !selectedDiaryImages.length) return;
 
@@ -1169,7 +1274,7 @@
                 imgs: selectedDiaryImages
             });
 
-            localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+            await persistState({ quiet: true });
             document.getElementById('diary-input').value = "";
             cancelImage();
             renderDiaries();
@@ -1196,9 +1301,9 @@
             return `<div class="diary-image-grid">${images.map(img => `<img src="${img}" onclick="zoomImg('${img}')" class="diary-image cursor-zoom-in hover:opacity-95 transition-all" alt="日记图片">`).join('')}</div>`;
         }
 
-        function updateDiaryText(id, text) {
+        async function updateDiaryText(id, text) {
             userDiaries = userDiaries.map(d => d.id === id ? {...d, text: text.trim()} : d);
-            localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+            await persistState({ quiet: true });
         }
 
         function exportBackup() {
@@ -1221,18 +1326,17 @@
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
                     if (!Array.isArray(data.diy) || !Array.isArray(data.diaries)) throw new Error();
                     userDIY = data.diy;
                     userDiaries = data.diaries;
-                    localStorage.setItem('tc_diy_data', JSON.stringify(userDIY));
-                    localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+                    await persistState();
                     currentTemplateIdx = 0;
                     updateDiyUI();
                     renderDiaries();
-                    alert("备份已导入");
+                    alert(cloudReady ? "备份已导入并同步到云端。" : "备份已导入；云端暂不可用，已先保存到当前浏览器。");
                 } catch {
                     alert("导入失败：请选择本页面导出的 JSON 备份。");
                 } finally {
@@ -1242,10 +1346,10 @@
             reader.readAsText(file);
         }
 
-        function deleteDiary(id) {
+        async function deleteDiary(id) {
             if(!confirm("确定抹除这段记录吗？")) return;
             userDiaries = userDiaries.filter(d => d.id !== id);
-            localStorage.setItem('tc_diary_data', JSON.stringify(userDiaries));
+            await persistState({ quiet: true });
             renderDiaries();
         }
 
@@ -1255,11 +1359,12 @@
         }
 
         // --- 初始化启动 ---
-        window.onload = () => {
+        window.onload = async () => {
             lucide.createIcons();
             initMagicCursor();
             initTitleReveal();
             initSliderDrag();
+            await initCloudSync();
             updateDiyUI();
             renderDiaries();
             setTimeout(() => {
